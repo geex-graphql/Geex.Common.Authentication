@@ -5,10 +5,10 @@ using System.Security.Claims;
 using System.Text;
 
 using Geex.Common.Abstraction;
+using Geex.Common.Abstraction.Entities;
 using Geex.Common.Abstractions;
 using Geex.Common.Abstractions.Enumerations;
 using Geex.Common.Authentication.Domain;
-using Geex.Common.Identity.Api.Aggregates.Users;
 
 using Microsoft.IdentityModel.Tokens;
 
@@ -20,7 +20,10 @@ namespace Geex.Common.Authentication.Utils
         {
             this.Audience = options.Audience;
             this.SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(Encoding.UTF8.GetBytes(options.SecretKey)), SecurityAlgorithms.HmacSha256Signature);
-            Expires = DateTime.Now.Add(options.Expires);
+            if (options.Expires.HasValue)
+            {
+                Expires = DateTime.Now.Add(options.Expires.Value);
+            }
             IssuedAt = DateTime.Now;
             Issuer = options.Issuer;
             Subject = new ClaimsIdentity(new Claim[]
@@ -36,7 +39,6 @@ namespace Geex.Common.Authentication.Utils
             {
                 Subject.AppendClaims(customClaims);
             }
-            Claims = user.Claims.ToDictionary(x => x.ClaimType, x => (object)x.ClaimValue);
         }
 
         /// <inheritdoc />

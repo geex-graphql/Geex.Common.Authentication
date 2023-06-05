@@ -8,10 +8,11 @@ using System.Threading.Tasks;
 
 using Geex.Common.Abstraction;
 using Geex.Common.Abstraction.Authorization;
+using Geex.Common.Abstraction.Entities;
+using Geex.Common.Abstraction.Gql.Inputs;
 using Geex.Common.Abstractions.Enumerations;
 using Geex.Common.Authentication.Domain;
-using Geex.Common.Identity.Core.Aggregates.Users;
-
+using MediatR;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.IdentityModel.Tokens;
 
@@ -25,14 +26,16 @@ namespace Geex.Common.Authentication.Utils
     public class GeexClaimsTransformation : IClaimsTransformation
     {
         private readonly IEnumerable<ISubClaimsTransformation> _transformations;
+        private readonly IMediator _mediator;
         private readonly IRedisDatabase _redis;
         private UserTokenGenerateOptions _options;
         private readonly GeexJwtSecurityTokenHandler _tokenHandler;
         private TokenValidationParameters _validationParams;
 
-        public GeexClaimsTransformation(IEnumerable<ISubClaimsTransformation> transformations, IRedisDatabase redis, UserTokenGenerateOptions options, GeexJwtSecurityTokenHandler tokenHandler, TokenValidationParameters validationParams)
+        public GeexClaimsTransformation(IEnumerable<ISubClaimsTransformation> transformations,IMediator mediator, IRedisDatabase redis, UserTokenGenerateOptions options, GeexJwtSecurityTokenHandler tokenHandler, TokenValidationParameters validationParams)
         {
             _transformations = transformations;
+            _mediator = mediator;
             _redis = redis;
             _options = options;
             _tokenHandler = tokenHandler;
@@ -49,21 +52,23 @@ namespace Geex.Common.Authentication.Utils
                 return principal;
             }
 
-            var cachedSession = await this._redis.GetNamedAsync<UserSessionCache>(userId);
             ClaimsIdentity claimsIdentity = new ClaimsIdentity();
-            if (cachedSession != default)
-            {
-                claimsIdentity.AppendClaims((_tokenHandler.ReadToken(cachedSession.token) as JwtSecurityToken).Claims);
-                principal.AddIdentity(claimsIdentity);
-                return principal;
-            }
+            // todo:单点直接登陆会导致缓存未清理, 暂时没找到方案, 这里临时禁用
+            //var cachedSession = await this._redis.GetNamedAsync<UserSessionCache>(userId);
+            //if (cachedSession != default)
+            //{
+            //    claimsIdentity.AppendClaims((_tokenHandler.ReadToken(cachedSession.token) as JwtSecurityToken).Claims);
+            //    principal.AddIdentity(claimsIdentity);
+            //    return principal;
+            //}
 
-            var user = DB.Queryable<User>().FirstOrDefault(x => x.Id == userId);
+            var user = (await _mediator.Send(new QueryInput<IUser>(userId))).FirstOrDefault();
             if (user == null)
             {
                 return principal;
             }
-            var ownedOrgCodes = DB.Queryable<User>().Select(x => new { x.Id, x.OrgCodes }).First(x => x.Id == principal.FindUserId()).OrgCodes;
+            //var ownedOrgCodes = DB.Queryable<User>().Select(x => new { x.Id, x.OrgCodes }).First(x => x.Id == principal.FindUserId()).OrgCodes;
+            var ownedOrgCodes = user.OrgCodes;
             foreach (var ownedOrgCode in ownedOrgCodes)
             {
                 claimsIdentity.AppendClaims(new Claim(GeexClaimType.Org, ownedOrgCode, valueType: "array"));

@@ -2,7 +2,7 @@
 
 namespace Geex.Common.Authentication.GqlSchemas.Inputs
 {
-    public class ExternalAuthenticateInput
+    public class FederateAuthenticateInput
     {
         /// <summary>
         /// 登陆提供方

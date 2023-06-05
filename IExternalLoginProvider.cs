@@ -5,8 +5,7 @@ using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
 using Geex.Common.Abstraction;
-using Geex.Common.Identity.Api.Aggregates.Users;
-using Geex.Common.Identity.Core.Aggregates.Users;
+using Geex.Common.Abstraction.Entities;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Http;
 

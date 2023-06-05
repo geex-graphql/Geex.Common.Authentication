@@ -1,6 +1,6 @@
 ﻿using System;
 using Geex.Common.Abstraction;
-using Geex.Common.Identity.Api.Aggregates.Users;
+using Geex.Common.Abstraction.Entities;
 using Microsoft.AspNetCore.Identity;
 
 namespace Geex.Common.Authentication.Domain
@@ -31,10 +31,10 @@ namespace Geex.Common.Authentication.Domain
     {
         public string Issuer;
         public string Audience;
-        public TimeSpan Expires;
+        public TimeSpan? Expires;
         public string SecretKey;
 
-        public UserTokenGenerateOptions(string issuer, string audience, string secretKey, TimeSpan expires)
+        public UserTokenGenerateOptions(string issuer, string audience, string secretKey, TimeSpan? expires)
         {
             this.Issuer = issuer;
             this.Audience = audience;
